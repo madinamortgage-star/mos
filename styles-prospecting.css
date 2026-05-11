@@ -1,0 +1,211 @@
+/* =========================================================
+   MOS — Prospecting Minimal Call Queue
+   ========================================================= */
+
+.pq {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 32px 80px;
+}
+
+/* ---------- Tiny summary ---------- */
+.pq-summary {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 18px 24px;
+  background: white;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  margin-bottom: 28px;
+}
+.pq-stat {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 0 28px;
+  flex: 1;
+}
+.pq-stat:first-child { padding-left: 0; }
+.pq-stat:last-child  { padding-right: 0; }
+.pq-stat-v {
+  font-family: var(--mono);
+  font-size: 28px; font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-feature-settings: "tnum" 1;
+}
+.pq-stat-v.overdue { color: var(--red-600); }
+.pq-stat-v.done    { color: var(--ok); }
+.pq-stat-l {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--brown-500); font-weight: 600;
+}
+.pq-stat-divider {
+  width: 1px; background: var(--stroke); flex: none;
+}
+
+/* ---------- Section head ---------- */
+.pq-section-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 4px 12px;
+  border-bottom: 1px solid var(--stroke);
+  margin-bottom: 14px;
+}
+.pq-section-head.muted { margin-top: 40px; opacity: 0.7; }
+.pq-section-title {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 700; color: var(--brown-700);
+}
+.pq-section-count {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--brown-500);
+  background: var(--beige-100);
+  padding: 2px 7px; border-radius: 999px;
+  font-weight: 600;
+}
+
+/* ---------- Call queue list ---------- */
+.pq-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.pq-list.muted { opacity: 0.55; }
+
+.pq-item {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 20px;
+  padding: 18px 4px;
+  border-bottom: 1px solid var(--stroke);
+  transition: background .15s;
+}
+.pq-item:hover { background: rgba(255,255,255,0.5); }
+.pq-item.is-done { opacity: 0.55; }
+.pq-item.is-done .pq-name { text-decoration: line-through; color: var(--brown-500); }
+
+.pq-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pq-head {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.pq-name {
+  font-size: 18px; font-weight: 700; color: var(--ink-900);
+  letter-spacing: -0.01em;
+}
+
+.pq-badge {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 3px 8px; border-radius: 4px;
+  text-transform: uppercase;
+}
+.pq-badge.overdue { background: rgba(148,69,71,0.10); color: var(--red-600); }
+.pq-badge.hot     { background: rgba(176,122,58,0.14); color: var(--warn); }
+.pq-badge.today   { background: var(--beige-100); color: var(--brown-700); }
+
+.pq-prio {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; color: var(--brown-600); font-weight: 500;
+}
+.pq-prio i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+.pq-meta {
+  display: flex; align-items: center; flex-wrap: wrap;
+  font-size: 13px; color: var(--brown-600);
+}
+.pq-meta .pq-sep { margin: 0 8px; color: var(--brown-400); }
+.pq-company { font-weight: 600; color: var(--ink-700); }
+.pq-phone   { font-family: var(--mono); color: var(--ink-700); font-weight: 600; text-decoration: none; }
+.pq-phone:hover { color: var(--red-600); }
+.pq-last    { color: var(--brown-500); }
+
+.pq-note {
+  font-size: 13.5px; color: var(--ink-500); line-height: 1.5;
+  max-width: 56ch;
+}
+
+/* CTA */
+.pq-cta {
+  display: flex; align-items: center; gap: 6px;
+  flex: none;
+  position: relative;
+  padding-top: 4px;
+}
+.pq-call {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  background: var(--red-600);
+  color: white;
+  font-size: 13.5px; font-weight: 700; letter-spacing: 0.02em;
+  border: 0;
+  transition: all .15s;
+  box-shadow: 0 4px 12px -4px rgba(148,69,71,0.4);
+}
+.pq-call:hover {
+  background: #82393B;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -4px rgba(148,69,71,0.5);
+}
+.pq-log {
+  padding: 11px 14px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brown-700);
+  font-size: 13px; font-weight: 600;
+  border: 1px solid var(--stroke-strong);
+  transition: all .15s;
+}
+.pq-log:hover { background: var(--beige-100); }
+.pq-done {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--ok);
+}
+
+.pq-log-pop {
+  position: absolute;
+  right: 0; top: calc(100% + 6px);
+  background: white;
+  border: 1px solid var(--stroke-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  display: flex; flex-direction: column;
+  z-index: 10;
+  min-width: 180px;
+}
+.pq-log-pop button {
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--ink-700);
+  background: transparent;
+}
+.pq-log-pop button:hover { background: var(--beige-100); }
+
+/* Empty state */
+.pq-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+.pq-empty-mark {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: rgba(78,122,78,0.12);
+  color: var(--ok);
+  display: grid; place-items: center;
+  margin: 0 auto 18px;
+}
+.pq-empty-title {
+  font-size: 22px; font-weight: 700; color: var(--ink-900);
+  letter-spacing: -0.01em;
+}
+.pq-empty-sub {
+  font-size: 14px; color: var(--brown-600); margin-top: 6px;
+}
+
+@media (max-width: 720px) {
+  .pq { padding: 20px 18px 60px; }
+  .pq-summary { padding: 14px 18px; }
+  .pq-stat { padding: 0 18px; }
+  .pq-item { flex-direction: column; gap: 12px; }
+  .pq-cta { width: 100%; }
+  .pq-call { flex: 1; justify-content: center; }
+}
