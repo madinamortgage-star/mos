@@ -60,7 +60,11 @@ routes still render with a stub user.
 │   │   │   ├── preapproved/page.tsx
 │   │   │   ├── past/page.tsx
 │   │   │   ├── partners/page.tsx
-│   │   │   └── contacts/page.tsx
+│   │   │   └── contacts/        # ← Phase 3A: live (Supabase) Contacts section
+│   │   │       ├── page.tsx     #   server: loads via lib/db/contacts, filters from URL
+│   │   │       ├── loading.tsx  #   skeleton
+│   │   │       ├── error.tsx    #   route error boundary (client)
+│   │   │       └── [id]/page.tsx#   server: contact detail + activity timeline
 │   │   ├── auth/callback/route.ts # OAuth / email-confirmation callback
 │   │   ├── globals.css
 │   │   ├── layout.tsx            # Root HTML
@@ -71,14 +75,24 @@ routes still render with a stub user.
 │   │   ├── signup-form.tsx       # client, useActionState → signUpAction
 │   │   ├── org-switcher.tsx      # placeholder cookie-backed org switcher
 │   │   ├── page-header.tsx
-│   │   └── coming-soon.tsx
+│   │   ├── coming-soon.tsx
+│   │   └── contacts/             # Contacts UI (mostly client islands)
+│   │       ├── badges.tsx        #   lifecycle / status / priority / tags badges (pure)
+│   │       ├── empty-state.tsx   #   reusable empty state (pure)
+│   │       ├── contacts-filters.tsx # client: search + lifecycle chips → URL params
+│   │       ├── contacts-table.tsx   # client: rows, click → drawer
+│   │       ├── contact-drawer.tsx   # client: slide-over quick view
+│   │       ├── contacts-board.tsx   # client: owns drawer state; table + drawer + empty
+│   │       └── new-contact-button.tsx # client: modal + createContactAction
 │   ├── lib/
 │   │   ├── auth.ts               # getUser / requireUser / AuthState (placeholder-aware)
 │   │   ├── org.ts                # getUserOrgs / getOrgContext (placeholder-aware)
+│   │   ├── contacts/format.ts    # pure presentation helpers (names, dates, badge meta)
 │   │   ├── actions/
 │   │   │   ├── auth.ts           # "use server": signIn / signUp / signOut
-│   │   │   └── org.ts            # "use server": setActiveOrg
-│   │   ├── db/                   # server-only data layer (Phase 3 pages call these)
+│   │   │   ├── org.ts            # "use server": setActiveOrg
+│   │   │   └── contacts.ts       # "use server": createContactAction
+│   │   ├── db/                   # server-only data layer
 │   │   │   ├── types.ts          # hand-written domain types (until generated types)
 │   │   │   ├── contacts.ts       # listContacts / getContact / countContacts
 │   │   │   ├── loans.ts          # listLoans / getLoan / listLoansGroupedByStage
@@ -204,7 +218,15 @@ Tracked in the phased plan in chat.
   optional demo seed, plus a server-only data layer (`src/lib/db/`) and
   hand-written domain types. Migrations are committed but **not run** — the app
   stays in placeholder mode.
-- **Phase 3 — next.** Port the prototype pages from `/legacy` to live Supabase
-  data, one at a time, using the `src/lib/db/` helpers (start with Contacts).
-  Also: Google OAuth (`TODO(Google OAuth)`), production RLS hardening
-  (`TODO(prod RLS hardening)`), and a Storage bucket for `documents`.
+- **Phase 3A — done.** Contacts section ported from `/legacy` to the App
+  Router: server-side list (`/contacts`) loaded via `lib/db/contacts`, URL-driven
+  search + lifecycle filters, lifecycle/status/priority/tag badges, a slide-over
+  drawer, a contact detail page (`/contacts/[id]`) with the activity timeline,
+  a placeholder-but-wired "New contact" form (`createContactAction`), and
+  loading / error / empty states. When Supabase is unconfigured it shows a clean
+  placeholder empty state instead of crashing.
+- **Phase 3B+ — next.** Port the remaining prototype pages (Loan Pipeline,
+  Prospecting, Partners, Dashboard, …) the same way. Also: Google OAuth
+  (`TODO(Google OAuth)`), production RLS hardening (`TODO(prod RLS hardening)`),
+  a Storage bucket for `documents`, and more contact mutations (edit / delete /
+  bulk + activity logging).
