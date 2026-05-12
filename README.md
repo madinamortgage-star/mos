@@ -39,9 +39,12 @@ routes still render with a stub user.
 ├── legacy/                       # Original HTML/JSX prototype (read-only)
 ├── supabase/
 │   ├── README.md                 # how to apply migrations + post-setup steps
+│   ├── seed.sql                  # OPTIONAL idempotent demo data (not a migration)
 │   └── migrations/
 │       ├── 20260101000000_init_tenancy.sql   # profiles, organizations, org_members
-│       └── 20260101000100_rls_tenancy.sql    # RLS policies (+ prod-hardening TODOs)
+│       ├── 20260101000100_rls_tenancy.sql    # tenancy RLS (+ is_org_member helper)
+│       ├── 20260101000200_domain_model.sql   # contacts/loans/pipelines/activities/… + FTS
+│       └── 20260101000300_domain_rls.sql     # org-scoped RLS on every domain table
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/               # /login, /signup (server pages → client forms)
@@ -75,6 +78,12 @@ routes still render with a stub user.
 │   │   ├── actions/
 │   │   │   ├── auth.ts           # "use server": signIn / signUp / signOut
 │   │   │   └── org.ts            # "use server": setActiveOrg
+│   │   ├── db/                   # server-only data layer (Phase 3 pages call these)
+│   │   │   ├── types.ts          # hand-written domain types (until generated types)
+│   │   │   ├── contacts.ts       # listContacts / getContact / countContacts
+│   │   │   ├── loans.ts          # listLoans / getLoan / listLoansGroupedByStage
+│   │   │   ├── pipelines.ts      # listPipelines / getPipelineWithStages / …
+│   │   │   └── activities.ts     # listActivities
 │   │   └── supabase/
 │   │       ├── env.ts            # central env reading + isSupabaseConfigured()
 │   │       ├── client.ts         # browser client
@@ -183,11 +192,19 @@ Preview deploys work without Supabase keys — they just run in placeholder mode
 
 ## Next phases
 
-Tracked in the phased plan in chat. Phase 1 (auth + basic tenancy) is in place.
-Immediate next steps:
+Tracked in the phased plan in chat.
 
-1. Add Google OAuth (hook points marked `TODO(Google OAuth)`).
-2. Harden RLS (see `TODO(prod RLS hardening)` in the RLS migration).
-3. Phase 2: domain tables (`contacts`, `loans`, `pipelines`, `activities`, …),
-   each `org_id`-scoped, then port the `contacts` page from `/legacy` to live
-   Supabase data.
+- **Phase 1 — done.** Supabase Auth (email/password) + tenancy
+  (`profiles` / `organizations` / `org_members`), middleware session refresh,
+  protected routes, placeholder org switcher.
+- **Phase 2 — done.** Core domain schema (`companies`, `partners`, `contacts`,
+  `pipelines`, `pipeline_stages`, `loans`, `activities`, `tasks`, `notes`,
+  `documents`, `saved_views`, `custom_fields_def`) — all `org_id`-scoped with
+  RLS, enums, indexes, contacts full-text search, `updated_at` triggers, an
+  optional demo seed, plus a server-only data layer (`src/lib/db/`) and
+  hand-written domain types. Migrations are committed but **not run** — the app
+  stays in placeholder mode.
+- **Phase 3 — next.** Port the prototype pages from `/legacy` to live Supabase
+  data, one at a time, using the `src/lib/db/` helpers (start with Contacts).
+  Also: Google OAuth (`TODO(Google OAuth)`), production RLS hardening
+  (`TODO(prod RLS hardening)`), and a Storage bucket for `documents`.
