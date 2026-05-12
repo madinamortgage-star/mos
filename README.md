@@ -37,14 +37,19 @@ routes still render with a stub user.
 ```
 .
 ├── legacy/                       # Original HTML/JSX prototype (read-only)
+├── supabase/
+│   ├── README.md                 # how to apply migrations + post-setup steps
+│   └── migrations/
+│       ├── 20260101000000_init_tenancy.sql   # profiles, organizations, org_members
+│       └── 20260101000100_rls_tenancy.sql    # RLS policies (+ prod-hardening TODOs)
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/               # /login, /signup
+│   │   ├── (auth)/               # /login, /signup (server pages → client forms)
 │   │   │   ├── layout.tsx
 │   │   │   ├── login/page.tsx
 │   │   │   └── signup/page.tsx
 │   │   ├── (app)/                # Protected route group
-│   │   │   ├── layout.tsx        # requires a user (or stub in placeholder mode)
+│   │   │   ├── layout.tsx        # requireUser() + org context
 │   │   │   ├── home/page.tsx
 │   │   │   ├── prospecting/page.tsx
 │   │   │   ├── pipeline/page.tsx
@@ -53,17 +58,25 @@ routes still render with a stub user.
 │   │   │   ├── past/page.tsx
 │   │   │   ├── partners/page.tsx
 │   │   │   └── contacts/page.tsx
+│   │   ├── auth/callback/route.ts # OAuth / email-confirmation callback
 │   │   ├── globals.css
 │   │   ├── layout.tsx            # Root HTML
 │   │   └── page.tsx              # Redirects to /home
 │   ├── components/
-│   │   ├── sidebar.tsx
+│   │   ├── sidebar.tsx           # nav + org switcher + sign-out
+│   │   ├── login-form.tsx        # client, useActionState → signInAction
+│   │   ├── signup-form.tsx       # client, useActionState → signUpAction
+│   │   ├── org-switcher.tsx      # placeholder cookie-backed org switcher
 │   │   ├── page-header.tsx
 │   │   └── coming-soon.tsx
 │   ├── lib/
-│   │   ├── auth.ts               # getUser / requireUser (placeholder-aware)
+│   │   ├── auth.ts               # getUser / requireUser / AuthState (placeholder-aware)
+│   │   ├── org.ts                # getUserOrgs / getOrgContext (placeholder-aware)
+│   │   ├── actions/
+│   │   │   ├── auth.ts           # "use server": signIn / signUp / signOut
+│   │   │   └── org.ts            # "use server": setActiveOrg
 │   │   └── supabase/
-│   │       ├── env.ts            # central env reading
+│   │       ├── env.ts            # central env reading + isSupabaseConfigured()
 │   │       ├── client.ts         # browser client
 │   │       ├── server.ts         # RSC / Route Handler / Server Action client
 │   │       └── middleware.ts     # session refresh helper
@@ -106,18 +119,41 @@ the app automatically switches out of placeholder mode:
 
 ---
 
-## Placeholder mode
+## Auth & tenancy (Phase 1)
+
+- **Email/password** sign-in & sign-up via Supabase Auth — Server Actions in
+  `src/lib/actions/auth.ts`, surfaced through `login-form.tsx` / `signup-form.tsx`.
+- **Sign-out** button in the sidebar (`signOutAction`).
+- **Session refresh** in `src/middleware.ts` on every request.
+- **Protected routes** — everything under `src/app/(app)/` goes through
+  `requireUser()`.
+- **`/auth/callback`** route handler for email-confirmation links and (TODO)
+  Google OAuth.
+- **Tenancy** — `organizations`, `profiles`, `org_members` tables
+  (`supabase/migrations/`), a new-user trigger that creates a personal org +
+  owner membership, and a minimal RLS layer.
+- **Org switcher** — a placeholder `<select>` in the sidebar that persists the
+  active org in a cookie; `getOrgContext()` resolves it against real
+  memberships.
+
+Apply the migrations when you're ready — see [`supabase/README.md`](./supabase/README.md).
+You don't need to run them to use the app in placeholder mode.
+
+### Placeholder mode
 
 Until real keys are pasted in, the project intentionally stays runnable:
 
 - `isSupabaseConfigured()` reports `false`.
 - `createClient()` (browser & server) returns `null` — guard with `if (!supabase) …`.
-- `requireUser()` returns a stub user (`demo@mos.local`).
-- `/login` shows a banner explaining the mode.
+- Auth Server Actions return a friendly "not configured" message instead of
+  hitting the network.
+- `requireUser()` returns a stub user (`demo@mos.local`); `getUserOrgs()`
+  returns a single demo org.
+- `/login` and `/signup` show a banner explaining the mode.
 - Middleware is a pass-through.
 
-This lets the team iterate on UI and ship preview deploys to Vercel before any
-backend exists.
+Fill in `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` and auth +
+tenancy activate automatically — no code changes.
 
 ---
 
@@ -147,8 +183,11 @@ Preview deploys work without Supabase keys — they just run in placeholder mode
 
 ## Next phases
 
-Tracked in the phased plan in chat. Immediate next steps:
+Tracked in the phased plan in chat. Phase 1 (auth + basic tenancy) is in place.
+Immediate next steps:
 
-1. Wire Supabase Auth (email/password + Google OAuth).
-2. Create `organizations` + RLS-scoped domain tables.
-3. Port the `contacts` page from `/legacy` to live Supabase data.
+1. Add Google OAuth (hook points marked `TODO(Google OAuth)`).
+2. Harden RLS (see `TODO(prod RLS hardening)` in the RLS migration).
+3. Phase 2: domain tables (`contacts`, `loans`, `pipelines`, `activities`, …),
+   each `org_id`-scoped, then port the `contacts` page from `/legacy` to live
+   Supabase data.

@@ -1,25 +1,13 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import { SignupForm } from "@/components/signup-form";
+import { getUser } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 
-export default function SignupPage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <div className="text-[11px] tracking-[0.16em] uppercase text-brown-600 font-semibold">
-          Get started
-        </div>
-        <h1 className="text-2xl font-bold text-ink-900 mt-1">Create your MOS account</h1>
-      </div>
-
-      <p className="text-sm text-brown-700">
-        Signup will be enabled once Supabase Auth is wired in a future phase.
-      </p>
-
-      <div className="text-sm text-brown-600">
-        Already have an account?{" "}
-        <Link href="/login" className="text-navy-700 font-medium">
-          Sign in
-        </Link>
-      </div>
-    </div>
-  );
+export default async function SignupPage() {
+  const configured = isSupabaseConfigured();
+  if (configured) {
+    const user = await getUser();
+    if (user) redirect("/home");
+  }
+  return <SignupForm configured={configured} />;
 }

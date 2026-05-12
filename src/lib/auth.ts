@@ -17,6 +17,12 @@ export type AppUser = {
   // Real Supabase users carry far more — extend this as you add columns.
 };
 
+/** Return value of the auth Server Actions, surfaced in the auth forms. */
+export type AuthState = {
+  error?: string;
+  message?: string;
+};
+
 const PLACEHOLDER_USER: AppUser = {
   id: "placeholder-user",
   email: "demo@mos.local",
