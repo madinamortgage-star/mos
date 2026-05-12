@@ -6,7 +6,14 @@
 import type { BoardItem } from "@/components/board/board-types";
 import { LIFECYCLE_META, PRIORITY_META, STATUS_META } from "@/lib/contacts/format";
 import { contactDisplayName } from "@/lib/contacts/format";
-import type { ContactRow, ContactStatus, LoanRow, LoanStatus } from "@/lib/db/types";
+import type {
+  ContactRow,
+  ContactStatus,
+  LoanRow,
+  LoanStatus,
+  PartnerRow,
+  PartnerStatus,
+} from "@/lib/db/types";
 import {
   LOAN_PURPOSE_META,
   LOAN_STATUS_META,
@@ -16,6 +23,8 @@ import {
   formatRate,
   loanTitle,
 } from "@/lib/loans/format";
+import { PARTNER_STATUS_META, PARTNER_TYPE_META } from "@/lib/partners/format";
+import type { PartnerReferralStats } from "@/lib/partners/stats";
 
 // --- which buckets each page shows, in display order ------------------------
 
@@ -23,6 +32,8 @@ export const ACTIVE_LOAN_STATUSES: LoanStatus[] = ["lead", "application", "proce
 export const PREAPPROVED_LOAN_STATUSES: LoanStatus[] = ["approved", "clear_to_close"];
 /** Past-client board: bucket past clients by their `status` (refi-likely first). */
 export const PAST_CONTACT_STATUSES: ContactStatus[] = ["hot", "warm", "cool", "cold", "new"];
+/** Partners board: bucket partners by `status`. */
+export const PARTNER_STATUS_GROUP_ORDER: PartnerStatus[] = ["active", "prospect", "inactive"];
 
 const LOAN_STATUS_GROUP_COLOR: Record<LoanStatus, string> = {
   lead: "#6B7FB3",
@@ -45,12 +56,22 @@ const CONTACT_STATUS_GROUP_COLOR: Record<ContactStatus, string> = {
   new: "#6B7FB3",
 };
 
+const PARTNER_STATUS_GROUP_COLOR: Record<PartnerStatus, string> = {
+  active: "#3E6E73",
+  prospect: "#6B7FB3",
+  inactive: "#8A6E8C",
+};
+
 export function loanStatusGroupColor(status: LoanStatus): string {
   return LOAN_STATUS_GROUP_COLOR[status] ?? "#263c6e";
 }
 
 export function contactStatusGroupColor(status: ContactStatus): string {
   return CONTACT_STATUS_GROUP_COLOR[status] ?? "#263c6e";
+}
+
+export function partnerStatusGroupColor(status: PartnerStatus): string {
+  return PARTNER_STATUS_GROUP_COLOR[status] ?? "#263c6e";
 }
 
 // --- builders ----------------------------------------------------------------
@@ -165,6 +186,64 @@ export function contactToBoardItem(contact: ContactRow, groupKey: string): Board
     meta,
     detailHref: `/contacts/${contact.id}`,
     detailLabel: "Open contact",
+    groupKey,
+  };
+}
+
+export function partnerToBoardItem(
+  partner: PartnerRow,
+  companyName: string | undefined,
+  stats: PartnerReferralStats,
+  groupKey: string,
+): BoardItem {
+  const typeMeta = PARTNER_TYPE_META[partner.partner_type];
+  const statusMeta = PARTNER_STATUS_META[partner.status];
+
+  const badges: BoardItem["badges"] = [
+    { label: typeMeta?.label ?? partner.partner_type, className: typeMeta?.className ?? "bg-beige-200 text-brown-700" },
+    {
+      label: statusMeta?.label ?? partner.status,
+      className: statusMeta?.className ?? "bg-ink-300/20 text-ink-500 ring-1 ring-ink-300/40",
+    },
+  ];
+  if (partner.tier) badges.push({ label: partner.tier, className: "bg-amber-500/10 text-amber-700" });
+
+  const lastReferralLabel = stats.lastReferralAt ? formatDate(stats.lastReferralAt) : "—";
+  const hint = `${stats.referralCount} referral${stats.referralCount === 1 ? "" : "s"}${
+    stats.lastReferralAt ? ` · last ${lastReferralLabel}` : ""
+  }`;
+
+  const meta: BoardItem["meta"] = [
+    { label: "Type", value: typeMeta?.label ?? partner.partner_type },
+    { label: "Status", value: statusMeta?.label ?? partner.status },
+    { label: "Tier", value: partner.tier ?? "—" },
+    { label: "Company", value: companyName ?? "—" },
+    { label: "Email", value: partner.email ?? "—" },
+    { label: "Phone", value: partner.phone ?? "—" },
+    { label: "Total referrals", value: String(stats.referralCount) },
+    { label: "Active loans referred", value: String(stats.activeLoansReferred) },
+    { label: "Closed volume referred", value: formatMoney(stats.closedVolume) },
+    { label: "Last referral", value: lastReferralLabel },
+    { label: "Last touch", value: formatDate(partner.last_touch_at) },
+    { label: "Notes", value: partner.notes ?? "—" },
+    { label: "Created", value: formatDate(partner.created_at) },
+    { label: "Updated", value: formatDate(partner.updated_at) },
+  ];
+
+  return {
+    id: partner.id,
+    kind: "partner",
+    title: partner.name,
+    subtitle: companyName ?? typeMeta?.label ?? undefined,
+    amountLabel: stats.closedVolume > 0 ? formatMoney(stats.closedVolume) : undefined,
+    amount: stats.closedVolume > 0 ? stats.closedVolume : undefined,
+    badges,
+    hint,
+    meta,
+    // No /partners/[id] page yet — leave the drawer's "open record" link off.
+    // TODO(Phase 3+): a partner detail page with the activity timeline + referred contacts.
+    detailHref: undefined,
+    detailLabel: undefined,
     groupKey,
   };
 }

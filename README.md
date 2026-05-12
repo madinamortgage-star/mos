@@ -54,7 +54,7 @@ routes still render with a stub user.
 │   │   ├── (app)/                # Protected route group
 │   │   │   ├── layout.tsx        # requireUser() + org context
 │   │   │   ├── home/page.tsx
-│   │   │   ├── partners/page.tsx        # still the ComingSoon stub
+│   │   │   ├── partners/      # ← Phase 3E: Partners board (partners + derived referral stats)
 │   │   │   ├── prospecting/   # ← Phase 3D: daily call queue (contacts + loans)
 │   │   │   ├── active/        # ← Phase 3C: Active Leads (Monday-style board, loans)
 │   │   │   ├── preapproved/   # ← Phase 3C: Pre-Approved (Monday-style board, loans)
@@ -102,27 +102,34 @@ routes still render with a stub user.
 │   │   │   ├── monday-board.tsx  #   client: search + summary cards + groups + drawer
 │   │   │   ├── board-skeleton.tsx#   loading skeleton (pure, reused by /prospecting too)
 │   │   │   └── board-error.tsx   #   client: error UI used by route error.tsx files
-│   │   └── prospecting/          # daily call queue UI
-│   │       ├── prospect-card.tsx #   client: queue card + inline "Log call ▾" disposition
-│   │       ├── prospect-drawer.tsx#  client: quick view + Log call / Add note / Follow-up
-│   │       └── prospect-queue.tsx#   client: search/filter + reason sections + stats + drawer
+│   │   ├── prospecting/          # daily call queue UI
+│   │   │   ├── prospect-card.tsx #   client: queue card + inline "Log call ▾" disposition
+│   │   │   ├── prospect-drawer.tsx#  client: quick view + Log call / Add note / Follow-up
+│   │   │   └── prospect-queue.tsx#   client: search/filter + reason sections + stats + drawer
+│   │   └── partners/             # Partners UI
+│   │       └── new-partner-button.tsx # client: modal + createPartnerAction
 │   ├── lib/
 │   │   ├── auth.ts               # getUser / requireUser / AuthState (placeholder-aware)
 │   │   ├── org.ts                # getUserOrgs / getOrgContext (placeholder-aware)
 │   │   ├── contacts/format.ts    # pure presentation helpers (names, dates, badge meta)
 │   │   ├── loans/format.ts       # pure presentation helpers (money, rate, loan badge meta)
-│   │   ├── board/build.ts        # pure: loanToBoardItem / contactToBoardItem + bucket consts
+│   │   ├── partners/format.ts    # pure: partner type/status badge meta + option lists
+│   │   ├── partners/stats.ts     # pure: computePartnerStats(partners, contacts, loans) → referral stats
+│   │   ├── board/build.ts        # pure: loan/contact/partnerToBoardItem + bucket consts
 │   │   ├── prospecting/queue.ts  # pure: buildProspectQueue(contacts, loans, now) → reason groups
 │   │   ├── actions/
 │   │   │   ├── auth.ts           # "use server": signIn / signUp / signOut
 │   │   │   ├── org.ts            # "use server": setActiveOrg
 │   │   │   ├── contacts.ts       # "use server": createContactAction
-│   │   │   └── loans.ts          # "use server": createLoanAction
+│   │   │   ├── loans.ts          # "use server": createLoanAction
+│   │   │   └── partners.ts       # "use server": createPartnerAction
 │   │   ├── db/                   # server-only data layer
 │   │   │   ├── types.ts          # hand-written domain types (until generated types)
 │   │   │   ├── contacts.ts       # listContacts / getContact / getContactsByIds / count
 │   │   │   ├── loans.ts          # listLoans / getLoan / listLoansGroupedByStage
 │   │   │   ├── pipelines.ts      # listPipelines / getPipelineWithStages / …
+│   │   │   ├── partners.ts       # listPartners / getPartner
+│   │   │   ├── companies.ts      # listCompanies / getCompaniesByIds
 │   │   │   └── activities.ts     # listActivities
 │   │   └── supabase/
 │   │       ├── env.ts            # central env reading + isSupabaseConfigured()
@@ -281,9 +288,20 @@ Tracked in the phased plan in chat.
   connect). Search + per-reason filter chips, stat cards, loading / error /
   empty / "done for today" states. Clean placeholder state when Supabase is
   unconfigured.
-- **Phase 3E+ — next.** Port the remaining prototype pages (Partners,
-  Dashboard) the same way. Also: Google OAuth (`TODO(Google OAuth)`),
-  production RLS hardening (`TODO(prod RLS hardening)`), a Storage bucket for
-  `documents`, drag-and-drop stage moves with activity logging, and the real
+- **Phase 3E — done.** Partners board (`/partners`): new `lib/db/partners.ts`
+  + `lib/db/companies.ts` helpers; partners bucketed by `status`
+  (active / prospect / inactive) via the shared `MondayBoard`; type / status /
+  tier badges; partner cards + a quick-view drawer; client-side search; a
+  placeholder-safe "New partner" form (`createPartnerAction`); summary cards
+  and per-partner referral stats — total referrals, active loans referred,
+  closed volume referred, last referral — *derived* from `contacts.partner_id`
+  + those contacts' loans (`lib/partners/stats.ts`, with a TODO noting a
+  first-class `loans.referring_partner_id` / `referrals` table would make them
+  exact + indexable). Loading / error / empty states; clean placeholder board
+  when Supabase is unconfigured.
+- **Phase 3F+ — next.** Port the Dashboard. Also: Google OAuth
+  (`TODO(Google OAuth)`), production RLS hardening (`TODO(prod RLS hardening)`),
+  a Storage bucket for `documents`, drag-and-drop stage moves with activity
+  logging, a partner detail page with the activity timeline, and the real
   mutations behind the placeholder actions (call logging, notes, follow-ups,
-  edit / delete / bulk).
+  referrals, edit / delete / bulk).

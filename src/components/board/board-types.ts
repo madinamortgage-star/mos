@@ -10,8 +10,8 @@ export type BoardMetaRow = { label: string; value: string };
 
 export type BoardItem = {
   id: string;
-  /** Underlying record kind — drives the "open full record" link. */
-  kind: "loan" | "contact";
+  /** Underlying record kind — informational; the "open full record" link uses `detailHref`. */
+  kind: "loan" | "contact" | "partner";
   title: string;
   subtitle?: string;
   /** Pre-formatted amount shown on the card (e.g. "$656,000"); undefined hides it. */
