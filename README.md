@@ -60,11 +60,15 @@ routes still render with a stub user.
 │   │   │   ├── preapproved/page.tsx
 │   │   │   ├── past/page.tsx
 │   │   │   ├── partners/page.tsx
-│   │   │   └── contacts/        # ← Phase 3A: live (Supabase) Contacts section
-│   │   │       ├── page.tsx     #   server: loads via lib/db/contacts, filters from URL
-│   │   │       ├── loading.tsx  #   skeleton
-│   │   │       ├── error.tsx    #   route error boundary (client)
-│   │   │       └── [id]/page.tsx#   server: contact detail + activity timeline
+│   │   │   ├── contacts/        # ← Phase 3A: live (Supabase) Contacts section
+│   │   │   │   ├── page.tsx     #   server: loads via lib/db/contacts, filters from URL
+│   │   │   │   ├── loading.tsx  #   skeleton
+│   │   │   │   ├── error.tsx    #   route error boundary (client)
+│   │   │   │   └── [id]/page.tsx#   server: contact detail + activity timeline
+│   │   │   └── pipeline/        # ← Phase 3B: live (Supabase) Loan Pipeline board
+│   │   │       ├── page.tsx     #   server: pipeline + stages + loans + borrower names
+│   │   │       ├── loading.tsx  #   column skeletons
+│   │   │       └── error.tsx    #   route error boundary (client)
 │   │   ├── auth/callback/route.ts # OAuth / email-confirmation callback
 │   │   ├── globals.css
 │   │   ├── layout.tsx            # Root HTML
@@ -76,25 +80,34 @@ routes still render with a stub user.
 │   │   ├── org-switcher.tsx      # placeholder cookie-backed org switcher
 │   │   ├── page-header.tsx
 │   │   ├── coming-soon.tsx
-│   │   └── contacts/             # Contacts UI (mostly client islands)
-│   │       ├── badges.tsx        #   lifecycle / status / priority / tags badges (pure)
-│   │       ├── empty-state.tsx   #   reusable empty state (pure)
-│   │       ├── contacts-filters.tsx # client: search + lifecycle chips → URL params
-│   │       ├── contacts-table.tsx   # client: rows, click → drawer
-│   │       ├── contact-drawer.tsx   # client: slide-over quick view
-│   │       ├── contacts-board.tsx   # client: owns drawer state; table + drawer + empty
-│   │       └── new-contact-button.tsx # client: modal + createContactAction
+│   │   ├── empty-state.tsx       # reusable empty state (pure)
+│   │   ├── contacts/             # Contacts UI (mostly client islands)
+│   │   │   ├── badges.tsx        #   lifecycle / status / priority / tags badges (pure)
+│   │   │   ├── contacts-filters.tsx # client: search + lifecycle chips → URL params
+│   │   │   ├── contacts-table.tsx   # client: rows, click → drawer
+│   │   │   ├── contact-drawer.tsx   # client: slide-over quick view
+│   │   │   ├── contacts-board.tsx   # client: owns drawer state; table + drawer + empty
+│   │   │   └── new-contact-button.tsx # client: modal + createContactAction
+│   │   └── pipeline/             # Loan Pipeline board UI
+│   │       ├── loan-badges.tsx   #   loan status / temperature / purpose badges (pure)
+│   │       ├── loan-card.tsx     #   loan card (pure)
+│   │       ├── pipeline-column.tsx # stage column: header (count + $ total) + cards (pure)
+│   │       ├── loan-drawer.tsx   #   client: slide-over loan quick view
+│   │       ├── pipeline-board.tsx#   client: search/filter + grouping by stage + drawer
+│   │       └── new-loan-button.tsx # client: modal + createLoanAction
 │   ├── lib/
 │   │   ├── auth.ts               # getUser / requireUser / AuthState (placeholder-aware)
 │   │   ├── org.ts                # getUserOrgs / getOrgContext (placeholder-aware)
 │   │   ├── contacts/format.ts    # pure presentation helpers (names, dates, badge meta)
+│   │   ├── loans/format.ts       # pure presentation helpers (money, rate, loan badge meta)
 │   │   ├── actions/
 │   │   │   ├── auth.ts           # "use server": signIn / signUp / signOut
 │   │   │   ├── org.ts            # "use server": setActiveOrg
-│   │   │   └── contacts.ts       # "use server": createContactAction
+│   │   │   ├── contacts.ts       # "use server": createContactAction
+│   │   │   └── loans.ts          # "use server": createLoanAction
 │   │   ├── db/                   # server-only data layer
 │   │   │   ├── types.ts          # hand-written domain types (until generated types)
-│   │   │   ├── contacts.ts       # listContacts / getContact / countContacts
+│   │   │   ├── contacts.ts       # listContacts / getContact / getContactsByIds / count
 │   │   │   ├── loans.ts          # listLoans / getLoan / listLoansGroupedByStage
 │   │   │   ├── pipelines.ts      # listPipelines / getPipelineWithStages / …
 │   │   │   └── activities.ts     # listActivities
@@ -225,8 +238,18 @@ Tracked in the phased plan in chat.
   a placeholder-but-wired "New contact" form (`createContactAction`), and
   loading / error / empty states. When Supabase is unconfigured it shows a clean
   placeholder empty state instead of crashing.
-- **Phase 3B+ — next.** Port the remaining prototype pages (Loan Pipeline,
-  Prospecting, Partners, Dashboard, …) the same way. Also: Google OAuth
-  (`TODO(Google OAuth)`), production RLS hardening (`TODO(prod RLS hardening)`),
-  a Storage bucket for `documents`, and more contact mutations (edit / delete /
-  bulk + activity logging).
+- **Phase 3B — done.** Loan Pipeline board (`/pipeline`): server-side load of
+  the default pipeline, its `pipeline_stages`, and its `loans` (with borrower
+  names resolved via `getContactsByIds`); a responsive Kanban — one column per
+  stage with count + volume totals, loan cards with status/temperature/purpose
+  badges, an "Unassigned" column for stage-less loans; client-side search +
+  My-deals / Hot filters; a loan detail slide-over (links to the borrower
+  contact); a placeholder-safe "New loan" form (`createLoanAction`, drops into
+  the default pipeline's first stage); loading / error / empty states. Clean
+  placeholder board when Supabase is unconfigured. Drag-and-drop stage moves
+  are intentionally not wired yet.
+- **Phase 3C+ — next.** Port the remaining prototype pages (Prospecting,
+  Partners, Dashboard, Active Leads / Pre-Approved / Past Clients boards) the
+  same way. Also: Google OAuth (`TODO(Google OAuth)`), production RLS hardening
+  (`TODO(prod RLS hardening)`), a Storage bucket for `documents`, drag-and-drop
+  stage moves with activity logging, and more mutations (edit / delete / bulk).

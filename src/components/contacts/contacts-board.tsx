@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import type { ContactRow } from "@/lib/db/types";
+import { EmptyState } from "@/components/empty-state";
 import { ContactDrawer } from "./contact-drawer";
 import { ContactsTable } from "./contacts-table";
-import { EmptyState } from "./empty-state";
 
 /**
  * Owns the "which contact is open in the drawer" state and composes the table
