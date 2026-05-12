@@ -54,12 +54,11 @@ routes still render with a stub user.
 │   │   ├── (app)/                # Protected route group
 │   │   │   ├── layout.tsx        # requireUser() + org context
 │   │   │   ├── home/page.tsx
-│   │   │   ├── prospecting/page.tsx
-│   │   │   ├── pipeline/page.tsx
-│   │   │   ├── active/page.tsx
-│   │   │   ├── preapproved/page.tsx
-│   │   │   ├── past/page.tsx
-│   │   │   ├── partners/page.tsx
+│   │   │   ├── prospecting/page.tsx     # still the ComingSoon stub
+│   │   │   ├── partners/page.tsx        # still the ComingSoon stub
+│   │   │   ├── active/        # ← Phase 3C: Active Leads (Monday-style board, loans)
+│   │   │   ├── preapproved/   # ← Phase 3C: Pre-Approved (Monday-style board, loans)
+│   │   │   ├── past/          # ← Phase 3C: Past Clients (Monday-style board, contacts)
 │   │   │   ├── contacts/        # ← Phase 3A: live (Supabase) Contacts section
 │   │   │   │   ├── page.tsx     #   server: loads via lib/db/contacts, filters from URL
 │   │   │   │   ├── loading.tsx  #   skeleton
@@ -88,18 +87,27 @@ routes still render with a stub user.
 │   │   │   ├── contact-drawer.tsx   # client: slide-over quick view
 │   │   │   ├── contacts-board.tsx   # client: owns drawer state; table + drawer + empty
 │   │   │   └── new-contact-button.tsx # client: modal + createContactAction
-│   │   └── pipeline/             # Loan Pipeline board UI
-│   │       ├── loan-badges.tsx   #   loan status / temperature / purpose badges (pure)
-│   │       ├── loan-card.tsx     #   loan card (pure)
-│   │       ├── pipeline-column.tsx # stage column: header (count + $ total) + cards (pure)
-│   │       ├── loan-drawer.tsx   #   client: slide-over loan quick view
-│   │       ├── pipeline-board.tsx#   client: search/filter + grouping by stage + drawer
-│   │       └── new-loan-button.tsx # client: modal + createLoanAction
+│   │   ├── pipeline/             # Loan Pipeline board UI
+│   │   │   ├── loan-badges.tsx   #   loan status / temperature / purpose badges (pure)
+│   │   │   ├── loan-card.tsx     #   loan card (pure)
+│   │   │   ├── pipeline-column.tsx # stage column: header (count + $ total) + cards (pure)
+│   │   │   ├── loan-drawer.tsx   #   client: slide-over loan quick view
+│   │   │   ├── pipeline-board.tsx#   client: search/filter + grouping by stage + drawer
+│   │   │   └── new-loan-button.tsx # client: modal + createLoanAction
+│   │   └── board/                # shared Monday-style board (Active / Pre-Approved / Past)
+│   │       ├── board-types.ts    #   BoardItem / BoardGroup / BoardSummaryCard
+│   │       ├── board-card.tsx    #   generic card (pure)
+│   │       ├── board-group.tsx   #   collapsible group section: header + card grid (pure)
+│   │       ├── board-drawer.tsx  #   client: generic quick-view drawer (renders meta rows)
+│   │       ├── monday-board.tsx  #   client: search + summary cards + groups + drawer
+│   │       ├── board-skeleton.tsx#   loading skeleton (pure)
+│   │       └── board-error.tsx   #   client: error UI used by route error.tsx files
 │   ├── lib/
 │   │   ├── auth.ts               # getUser / requireUser / AuthState (placeholder-aware)
 │   │   ├── org.ts                # getUserOrgs / getOrgContext (placeholder-aware)
 │   │   ├── contacts/format.ts    # pure presentation helpers (names, dates, badge meta)
 │   │   ├── loans/format.ts       # pure presentation helpers (money, rate, loan badge meta)
+│   │   ├── board/build.ts        # pure: loanToBoardItem / contactToBoardItem + bucket consts
 │   │   ├── actions/
 │   │   │   ├── auth.ts           # "use server": signIn / signUp / signOut
 │   │   │   ├── org.ts            # "use server": setActiveOrg
@@ -248,8 +256,16 @@ Tracked in the phased plan in chat.
   the default pipeline's first stage); loading / error / empty states. Clean
   placeholder board when Supabase is unconfigured. Drag-and-drop stage moves
   are intentionally not wired yet.
-- **Phase 3C+ — next.** Port the remaining prototype pages (Prospecting,
-  Partners, Dashboard, Active Leads / Pre-Approved / Past Clients boards) the
-  same way. Also: Google OAuth (`TODO(Google OAuth)`), production RLS hardening
-  (`TODO(prod RLS hardening)`), a Storage bucket for `documents`, drag-and-drop
-  stage moves with activity logging, and more mutations (edit / delete / bulk).
+- **Phase 3C — done.** Shared Monday-style board system (`src/components/board/`
+  + `src/lib/board/build.ts`): a source-agnostic `BoardItem`/`BoardGroup` model,
+  generic card / collapsible group / quick-view drawer, and a `MondayBoard` shell
+  (search + summary cards + groups + drawer). Wired into three pages:
+  `/active` (active loans bucketed by status), `/preapproved` (loans in
+  approved / clear-to-close), `/past` (past-client contacts bucketed by status).
+  Each has loading / error / empty states and a placeholder-safe action button.
+  Clean empty boards when Supabase is unconfigured. No drag-and-drop yet.
+- **Phase 3D+ — next.** Port the remaining prototype pages (Prospecting,
+  Partners, Dashboard) the same way. Also: Google OAuth (`TODO(Google OAuth)`),
+  production RLS hardening (`TODO(prod RLS hardening)`), a Storage bucket for
+  `documents`, drag-and-drop stage moves with activity logging, and more
+  mutations (edit / delete / bulk).
