@@ -54,8 +54,8 @@ routes still render with a stub user.
 │   │   ├── (app)/                # Protected route group
 │   │   │   ├── layout.tsx        # requireUser() + org context
 │   │   │   ├── home/page.tsx
-│   │   │   ├── prospecting/page.tsx     # still the ComingSoon stub
 │   │   │   ├── partners/page.tsx        # still the ComingSoon stub
+│   │   │   ├── prospecting/   # ← Phase 3D: daily call queue (contacts + loans)
 │   │   │   ├── active/        # ← Phase 3C: Active Leads (Monday-style board, loans)
 │   │   │   ├── preapproved/   # ← Phase 3C: Pre-Approved (Monday-style board, loans)
 │   │   │   ├── past/          # ← Phase 3C: Past Clients (Monday-style board, contacts)
@@ -94,20 +94,25 @@ routes still render with a stub user.
 │   │   │   ├── loan-drawer.tsx   #   client: slide-over loan quick view
 │   │   │   ├── pipeline-board.tsx#   client: search/filter + grouping by stage + drawer
 │   │   │   └── new-loan-button.tsx # client: modal + createLoanAction
-│   │   └── board/                # shared Monday-style board (Active / Pre-Approved / Past)
-│   │       ├── board-types.ts    #   BoardItem / BoardGroup / BoardSummaryCard
-│   │       ├── board-card.tsx    #   generic card (pure)
-│   │       ├── board-group.tsx   #   collapsible group section: header + card grid (pure)
-│   │       ├── board-drawer.tsx  #   client: generic quick-view drawer (renders meta rows)
-│   │       ├── monday-board.tsx  #   client: search + summary cards + groups + drawer
-│   │       ├── board-skeleton.tsx#   loading skeleton (pure)
-│   │       └── board-error.tsx   #   client: error UI used by route error.tsx files
+│   │   ├── board/                # shared Monday-style board (Active / Pre-Approved / Past)
+│   │   │   ├── board-types.ts    #   BoardItem / BoardGroup / BoardSummaryCard
+│   │   │   ├── board-card.tsx    #   generic card (pure)
+│   │   │   ├── board-group.tsx   #   collapsible group section: header + card grid (pure)
+│   │   │   ├── board-drawer.tsx  #   client: generic quick-view drawer (renders meta rows)
+│   │   │   ├── monday-board.tsx  #   client: search + summary cards + groups + drawer
+│   │   │   ├── board-skeleton.tsx#   loading skeleton (pure, reused by /prospecting too)
+│   │   │   └── board-error.tsx   #   client: error UI used by route error.tsx files
+│   │   └── prospecting/          # daily call queue UI
+│   │       ├── prospect-card.tsx #   client: queue card + inline "Log call ▾" disposition
+│   │       ├── prospect-drawer.tsx#  client: quick view + Log call / Add note / Follow-up
+│   │       └── prospect-queue.tsx#   client: search/filter + reason sections + stats + drawer
 │   ├── lib/
 │   │   ├── auth.ts               # getUser / requireUser / AuthState (placeholder-aware)
 │   │   ├── org.ts                # getUserOrgs / getOrgContext (placeholder-aware)
 │   │   ├── contacts/format.ts    # pure presentation helpers (names, dates, badge meta)
 │   │   ├── loans/format.ts       # pure presentation helpers (money, rate, loan badge meta)
 │   │   ├── board/build.ts        # pure: loanToBoardItem / contactToBoardItem + bucket consts
+│   │   ├── prospecting/queue.ts  # pure: buildProspectQueue(contacts, loans, now) → reason groups
 │   │   ├── actions/
 │   │   │   ├── auth.ts           # "use server": signIn / signUp / signOut
 │   │   │   ├── org.ts            # "use server": setActiveOrg
@@ -264,8 +269,21 @@ Tracked in the phased plan in chat.
   approved / clear-to-close), `/past` (past-client contacts bucketed by status).
   Each has loading / error / empty states and a placeholder-safe action button.
   Clean empty boards when Supabase is unconfigured. No drag-and-drop yet.
-- **Phase 3D+ — next.** Port the remaining prototype pages (Prospecting,
-  Partners, Dashboard) the same way. Also: Google OAuth (`TODO(Google OAuth)`),
+- **Phase 3D — done.** Prospecting daily call queue (`/prospecting`):
+  `buildProspectQueue(contacts, loans, now)` (pure, server-side) bucket­s
+  prospects into five reasons — overdue follow-up, pre-approval / rate-lock
+  expiring, hot lead, past-client refi, no recent touch — sorted by priority +
+  urgency. Each prospect card shows name, phone/email, the reason, last-contact
+  + follow-up, a priority badge, an inline "Log call ▾" disposition picker, and
+  a link to the contact profile; a quick-view drawer adds placeholder-safe
+  "Log call / Add note / Schedule follow-up" actions (TODO comments mark where
+  Server-Action mutations + a Supabase cron/Edge Function for reminders will
+  connect). Search + per-reason filter chips, stat cards, loading / error /
+  empty / "done for today" states. Clean placeholder state when Supabase is
+  unconfigured.
+- **Phase 3E+ — next.** Port the remaining prototype pages (Partners,
+  Dashboard) the same way. Also: Google OAuth (`TODO(Google OAuth)`),
   production RLS hardening (`TODO(prod RLS hardening)`), a Storage bucket for
-  `documents`, drag-and-drop stage moves with activity logging, and more
-  mutations (edit / delete / bulk).
+  `documents`, drag-and-drop stage moves with activity logging, and the real
+  mutations behind the placeholder actions (call logging, notes, follow-ups,
+  edit / delete / bulk).
