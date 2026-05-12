@@ -95,3 +95,21 @@ export async function countContacts(orgId: Uuid): Promise<number> {
   if (error || count == null) return 0;
   return count;
 }
+
+/** Fetch multiple contacts by id, keyed by id. Used to resolve borrower names. */
+export async function getContactsByIds(orgId: Uuid, ids: Uuid[]): Promise<Map<Uuid, ContactRow>> {
+  const out = new Map<Uuid, ContactRow>();
+  if (ids.length === 0 || !isSupabaseConfigured()) return out;
+  const supabase = await createClient();
+  if (!supabase) return out;
+
+  const { data, error } = await supabase
+    .from("contacts")
+    .select("*")
+    .eq("org_id", orgId)
+    .in("id", ids);
+
+  if (error || !data) return out;
+  for (const row of data as ContactRow[]) out.set(row.id, row);
+  return out;
+}
