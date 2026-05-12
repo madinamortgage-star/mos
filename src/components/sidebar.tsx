@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOutAction } from "@/lib/actions/auth";
+import { OrgSwitcher } from "@/components/org-switcher";
+import type { Org } from "@/lib/org";
 
 type NavItem = { key: string; label: string; href: string; count?: number };
 
@@ -16,7 +19,15 @@ const NAV: NavItem[] = [
   { key: "contacts", label: "Contacts", href: "/contacts", count: 412 },
 ];
 
-export function Sidebar({ userEmail }: { userEmail?: string | null }) {
+export function Sidebar({
+  userEmail,
+  orgs,
+  currentOrg,
+}: {
+  userEmail?: string | null;
+  orgs: Org[];
+  currentOrg: Org | null;
+}) {
   const pathname = usePathname();
 
   return (
@@ -30,6 +41,8 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
           <div className="text-[11px] text-brown-600 uppercase tracking-wider">Mortgage OS</div>
         </div>
       </div>
+
+      <OrgSwitcher orgs={orgs} currentOrg={currentOrg} />
 
       <button
         type="button"
@@ -50,9 +63,7 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
               key={it.key}
               href={it.href}
               className={`flex items-center justify-between px-3 py-2 rounded-md text-sm ${
-                active
-                  ? "bg-navy-900 text-beige-100"
-                  : "text-brown-700 hover:bg-beige-200"
+                active ? "bg-navy-900 text-beige-100" : "text-brown-700 hover:bg-beige-200"
               }`}
             >
               <span>{it.label}</span>
@@ -70,16 +81,24 @@ export function Sidebar({ userEmail }: { userEmail?: string | null }) {
         })}
       </nav>
 
-      <div className="border-t border-stroke px-4 py-3 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-navy-700 text-beige-100 text-xs flex items-center justify-center font-semibold">
-          {(userEmail ?? "?").slice(0, 2).toUpperCase()}
-        </div>
-        <div className="leading-tight text-xs">
-          <div className="font-semibold text-ink-900 truncate max-w-[140px]">
-            {userEmail ?? "Signed out"}
+      <div className="border-t border-stroke px-4 py-3 space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-navy-700 text-beige-100 text-xs flex items-center justify-center font-semibold">
+            {(userEmail ?? "?").slice(0, 2).toUpperCase()}
           </div>
-          <div className="text-brown-500">NMLS #1902847</div>
+          <div className="leading-tight text-xs min-w-0">
+            <div className="font-semibold text-ink-900 truncate">{userEmail ?? "Signed out"}</div>
+            <div className="text-brown-500 truncate">{currentOrg?.name ?? "—"}</div>
+          </div>
         </div>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="w-full text-left text-xs text-brown-600 hover:text-red-600 border border-stroke rounded-md px-3 py-1.5"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
     </aside>
   );
